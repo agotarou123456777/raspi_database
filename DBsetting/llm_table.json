@@ -1,0 +1,61 @@
+{
+    "database": "LLM",
+    "table": "LLM_table",
+    "column": [
+        {
+            "name": "Timestamp",
+            "type": "TIMESTAMP",
+            "AI": false
+        },
+        {
+            "name": "Camera_id",
+            "type": "INT",
+            "AI": false
+        },
+        {
+            "name": "Sequence_id",
+            "type": "BIGINT",
+            "AI": false
+        },
+        {
+            "name": "Image_path",
+            "type": "TEXT(65535)",
+            "AI": false
+        },
+        {
+            "name": "Model",
+            "type": "TEXT(65535)",
+            "AI": false
+        },
+        {
+            "name": "LLM_id",
+            "type": "INT",
+            "AI": false
+        },
+        {
+            "name": "Mode",
+            "type": "TEXT(65535)",
+            "AI": false
+        },
+        {
+            "name": "Verbose",
+            "type": "TEXT(65535)",
+            "AI": false
+        },
+        {
+            "name": "System",
+            "type": "TEXT(65535)",
+            "AI": false
+        },
+        {
+            "name": "Prompt",
+            "type": "TEXT(65535)",
+            "AI": false
+        },
+        {
+            "name": "Reply",
+            "type": "TEXT(65535)",
+            "AI": false
+        }
+    ]
+}

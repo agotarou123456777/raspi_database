@@ -1,0 +1,8 @@
+paho-mqtt
+mysql-connector-python
+mqtt
+flask
+peewee
+pymysql
+numpy
+opencv-python
