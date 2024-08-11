@@ -2,12 +2,14 @@
 
 echo "welcom to Raspberry Pi Setting!"
 
+set -e
+
 os_name=$(lsb_release -si)
-if [[ $os_name == "Ubuntu" || $os_name == "Raspbian" ]]; then
-    echo "your operation system is $os_name"
+if [ ${os_name} == "Ubuntu" ] || [ ${os_name} == "Raspbian" ]; then
+    echo "your operation system is ${os_name}"
 
 else
-    echo "your operation system is $os_name"
+    echo "your operation system is ${os_name}"
     echo "please use Ubuntu or Rasbian-OS"
     echo "bye."
     exit 1
@@ -15,52 +17,72 @@ else
 fi
 
 
-setup_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-root_dir="$(dirname "$script_dir")"
-work_dir="$(dirname "$script_dir")/work"
-setup_script_path="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/$(basename "${BASH_SOURCE[0]}")"
-requirement_txt_path="$setup_dir/requirement.txt"
-current_user="$USER"
+echo "directory exist confim ..."
+root_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && cd .. && pwd)"
+echo "root directory is set : ${root_dir}"
+setup_dir="${root_dir}/setup"
+echo "setup directory is set : ${setup_dir}"
+work_dir="${root_dir}/work"
+echo "work  directory is set : ${work_dir}"
 
-echo "Using script is $setup_script_path"
-echo "Root  directory is $root_dir"
-echo "Setup directory is $setup_dir"
-echo "Work  directory is $work_dir"
+if [ -d "${setup_dir}" ] && [ -d "${root_dir}" ] && [ -d "${work_dir}" ]; then
+    echo "directory exist confirmed !"
+else
+    echo "directory don't exist !"
+    echo "please confirm directory place !"
+    echo "bye."
+    exit 1
+fi
 
 
-echo "Do you want to set proxy to .bashrc? (y(Default) / n)"
-read answer
-if [[ "$answer" == "yes" || "$answer" == "y" ]]; then
+echo "setup script exist confim ..."
+setup_script_path="${setup_dir}/setup.sh"
+database_create_py="${setup_dir}/database_creation.py"
+echo "setup.sh is set : ${setup_script_path}"
+echo "database_create.py is set : ${database_create_py}"
+
+if [ -f "$setup_script_path" ] && [ -f "$database_create_py" ]; then
+    echo "file exist confimed !"
+else
+    echo "files don't exist !"
+    echo "please confirm file place !"
+    echo "bye."
+    exit 1
+fi
+
+read -p "Do you want to set proxy to .bashrc? (y(Default) / n)" answer
+if [ ${answer} == "yes" ] || [ ${answer} == "y" ]; then
     echo "This is setting proxy server."
-    echo "Please enter proxy ID (example : 220800022) -> "
-    read proxy_id
+    read -p "Please enter proxy ID (example : 220800022) -> " proxy_id
 
-    echo "Please enter proxy PASSWORD -> "
-    read proxy_pass 
+    read -p "Please enter proxy PASSWORD -> " proxy_pass 
 
     echo "Please enter proxy address and port" 
-    echo "expample : 192.168.0.0:8080 -> "
-    read proxy_address
-    echo "Hello, $user_name!"
+    read -p "expample : 192.168.0.0:8080 -> " proxy_address
+    echo "Hello, ${proxy_id}!"
+    echo "Proxy server is set to ${proxy_address}"
 
-    echo "export HTTP_PROXY=http://$proxy_id:$proxy_pass@$proxy_address/" >> ~/.bashrc
-    echo "export HTTPS_PROXY=http://$proxy_id:$proxy_pass@$proxy_address/" >> ~/.bashrc
 
-    echo "git config --global http.proxy http://$proxy_id:$proxy_pass@$proxy_address" >> ~/.bashrc
-    echo "git config --global https.proxy http://$proxy_id:$proxy_pass@$proxy_address" >> ~/.bashrc
+    echo "# This is setup.bash settings=========================================" >> ~/.bashrc
+    echo "export HTTP_PROXY=http://${proxy_id}:${proxy_pass}@${proxy_address}/" >> ~/.bashrc
+    echo "export HTTPS_PROXY=http://${proxy_id}:${proxy_pass}@${proxy_address}/" >> ~/.bashrc
 
-    echo 'Acquire::http::Proxy "http://$proxy_id:$proxy_pass@$proxy_address";' | sudo tee /etc/apt/apt.conf > /dev/null
-    echo 'Acquire::https::Proxy "http://$proxy_id:$proxy_pass@$proxy_address";' | sudo tee /etc/apt/apt.conf > /dev/null
-
-    # 起動簡略化のalias
-    echo 'alias rundb="bash $work_dir/$os_name/run.sh"' >> ~/.bashrc
+    echo "git config --global http.proxy http://${proxy_id}:${proxy_pass}@${proxy_address}" >> ~/.bashrc
+    echo "git config --global https.proxy http://${proxy_id}:${proxy_pass}@${proxy_address}" >> ~/.bashrc
+    
+    echo "alias rundb=\"bash ${work_dir}/${os_name}/run.sh\"" >> ~/.bashrc
+    echo "# This is setup.bash settings=========================================" >> ~/.bashrc
+    
+    echo "# This is setup.bash settings" | sudo tee /etc/apt/apt.conf >> /dev/null
+    echo "Acquire::http::Proxy \"http://${proxy_id}:${proxy_pass}@${proxy_address}\";" | sudo tee -a /etc/apt/apt.conf > /dev/null
+    echo "Acquire::https::Proxy \"http://${proxy_id}:${proxy_pass}@${proxy_address}\";" | sudo tee -a /etc/apt/apt.conf > /dev/null
+    echo "/etc/apt/apt.conf is set ... Done !"
+    cat /etc/apt/apt.conf
 
     source ~/.bashrc
 
-
-elif [[ "$answer" == "no" || "$answer" == "n" ]]; then
+elif [ ${answer} == "no" ] || [ ${answer} == "n" ]; then
     echo "Proxy setting is not used."
-
 
 else
     echo "Invalid input. Please enter 'y(yes)' or 'n(no)'."
@@ -69,66 +91,46 @@ fi
 
 
 echo "Software Update at First ..."
-sudo apt update
-sudo apt upgrade
-echo "Complete!"
+sudo apt update && sudo apt upgrade -y
+echo "Done !"
 
 
-if [[ $os_name == "Ubuntu" ]]; then
-    echo "your operation system is Ubuntu."
-    echo "use script -> setup_ubuntu.sh ."
+echo "Software basic package install ..."
+sudo apt install -y ssh chrony 
+sudo apt install -y vim-gtk3 gedit
+sudo apt install -y python3-pip git curl wget
+sudo apt install -y ibus-mozc mozc-utils-gui
+sudo apt install -y mosquitto mosquitto-clients
+sudo apt install -y gedit
+echo "Done !"
 
-    #基本パッケージ
-    sudo apt install -y ssh vsftpd chrony vim-gtk3 
-    sudo apt install -y python3-pip git curl wget
-    sudo apt install -y ibus-mozc mozc-utils-gui
 
-    #ftpセッティング
-    sudo cp /etc/vsftpd.conf /etc/_vsftpd.conf
-    cat ${setup_dir}/ftpd_setup.txt | sudo tee /etc/vsftpd.conf > /dev/null
-    echo "$current_user" | sudo tee /etc/vsftpd.chroot_list > /dev/null
+# ftpセッティング
+sudo apt install -y vsftpd
+sudo cp -rf /etc/vsftpd.conf /etc/_vsftpd.conf
+cat ${setup_dir}/ftpd_setup.txt | sudo tee /etc/vsftpd.conf > /dev/null
+echo "${USER}" | sudo tee /etc/vsftpd.chroot_list > /dev/null
 
-    #データベース(mysql)
-    sudo apt install mysql-server mysql-client
 
-    #phpMyAdmin用
-    sudo apt install php8.1 apache2
-    sudo apt install phpmyadmin
+if [ ${os_name} == "Ubuntu" ]; then
+    echo "your operation system is ${os_name}."
 
-    #MQTT用 mosquitto
-    sudo apt install mosquitto mosquitto_clients
-
-    # pipがインストールされていることを確認
-    sudo apt install -y python3-pip
+    # データベース(mysql)とhpMyAdmin用のパッケージインストール
+    sudo apt install -y mysql-server mysql-client
+    sudo apt install -y php8.1 apache2
+    sudo apt install -y phpmyadmin
 
     # requirement.txtからパッケージインストール
     pip3 install -r ${setup_dir}/requirement.txt
 
 
-elif [[ $os_name == "Raspbian" ]]; then
-    echo "your operation system is Raspbian."
-    echo "use script -> setup_ubuntu.sh ."
+elif [ ${os_name} == "Raspbian" ]; then
+    echo "your operation system is ${os_name}."
 
-    #基本パッケージ
-    sudo apt install -y ssh vsftpd chrony vim-gtk3 
-    sudo apt install -y python3-pip git curl wget
-    sudo apt install -y ibus-mozc mozc-utils-gui
-    sudo apt install -y gedit
-
-    #ftpセッティング
-    sudo cp /etc/vsftpd.conf /etc/_vsftpd.conf
-    cat ${setup_dir}/ftpd_setup.txt | sudo tee /etc/vsftpd.conf > /dev/null
-    echo "$current_user" | sudo tee /etc/vsftpd.chroot_list > /dev/null
-
-    #データベース(mysql)
-    sudo apt install mariadb-server mariadb-client
-
-    #phpMyAdmin用
-    sudo apt install php8.2 apache2
-    sudo apt install phpmyadmin
-
-    #MQTT用 mosquitto
-    sudo apt install mosquitto mosquitto_clients
+    #データベース(mysql)とhpMyAdmin用のパッケージインストール
+    sudo apt install -y mariadb-server mariadb-client
+    sudo apt install -y php8.2 apache2
+    sudo apt install -y phpmyadmin
 
     # 仮想環境を作成
     venv_dir=".pidbenv"
@@ -153,7 +155,7 @@ elif [[ $os_name == "Raspbian" ]]; then
     echo "Done."
 
 else
-    echo "your operation system is $os_name"
+    echo "your operation system is ${os_name}"
     echo "please use Ubuntu or Rasbian-OS"
     echo "bye."
     exit 1

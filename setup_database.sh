@@ -1,48 +1,71 @@
 #!/bin/bash
 
+echo "welcom to Raspberry Pi Setting!"
+
+set -e
 
 os_name=$(lsb_release -si)
-if [[ $os_name == "Ubuntu" || $os_name == "Raspbian" ]]; then
-    echo "your operation system is $os_name"
+if [ ${os_name} == "Ubuntu" ] || [ ${os_name} == "Raspbian" ]; then
+    echo "your operation system is ${os_name}"
+
 else
-    echo "your operation system is $os_name"
+    echo "your operation system is ${os_name}"
     echo "please use Ubuntu or Rasbian-OS"
+    echo "bye."
+    exit 1
+
+fi
+
+
+
+echo "directory exist confim ..."
+root_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && cd .. && pwd)"
+echo "root directory is set : ${root_dir}"
+setup_dir="${root_dir}/setup"
+echo "setup directory is set : ${setup_dir}"
+work_dir="${root_dir}/work"
+echo "work  directory is set : ${work_dir}"
+
+if [ -d "${setup_dir}" ] && [ -d "${root_dir}" ] && [ -d "${work_dir}" ]; then
+    echo "directory exist confirmed !"
+else
+    echo "directory don't exist !"
+    echo "please confirm directory place !"
     echo "bye."
     exit 1
 fi
 
-setup_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-root_dir="$(dirname "$script_dir")"
-work_dir="$(dirname "$script_dir")/work"
-setup_script_path="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/$(basename "${BASH_SOURCE[0]}")"
-database_create_py="$setup_dir/database_creation.py"
 
-echo "Using script is $setup_script_path"
-echo "Root  directory is $root_dir"
-echo "Setup directory is $setup_dir"
-echo "Work  directory is $work_dir"
+echo "setup script exist confim ..."
+setup_script_path="${setup_dir}/setup.sh"
+database_create_py="${setup_dir}/database_creation.py"
+echo "setup.sh is set : ${setup_script_path}"
+echo "database_create.py is set : ${database_create_py}"
 
-sudo apt update
+if [ -f "$setup_script_path" ] && [ -f "$database_create_py" ]; then
+    echo "file exist confimed !"
+else
+    echo "files don't exist !"
+    echo "please confirm file place !"
+    echo "bye."
+    exit 1
+fi
 
 # 新しいrootパスワードとユーザー情報を設定
-echo "Do you want to set root password? (y(Default) / n)"
-read answer
-if [[ "$answer" == "yes" || "$answer" == "y" ]]; then
-    echo "Please enter New root password for database ."
-    read root_pass
-    ROOT_PASSWORD="$root_pass"
+read -p "Do you want to set root password? (y(Default) / n)" answer
+answer="${answer:-y}"
+if [ "${answer}" == "yes" ] || [ "${answer}" == "y" ]; then
+    read -p "Please enter New root password for database ." root_pass
+    echo
 
-# rootユーザーのパスワードを設定
-sudo mysql -u root <<EOF
-ALTER USER 'root'@'localhost' IDENTIFIED BY '$ROOT_PASSWORD';
+    # rootユーザーのパスワードを設定
+    sudo mysql -u root <<EOF
+ALTER USER 'root'@'localhost' IDENTIFIED BY '${root_pass}';
 FLUSH PRIVILEGES;
-EXIT;
 EOF
 
-elif [[ "$answer" == "no" || "$answer" == "n" ]]; then
-    echo "Please enter current root password for database ."
-    read root_pass
-    ROOT_PASSWORD="$root_pass"
+elif [ "${answer}" == "no" ] || [ "${answer}" == "n" ]; then
+    read -p "Please enter current root password for database ." root_pass
 
 else
     echo "Invalid input. Please enter 'y(yes)' or 'n(no)'."
@@ -50,24 +73,19 @@ else
 fi
 
 # 新しいユーザーを作成し、パスワードを設定して権限を付与
-echo "Do you want to create new user for database? (y(Default) / n)"
-read answer
-if [[ "$answer" == "yes" || "$answer" == "y" ]]; then
-    echo "Please enter New user name ."
-    read user_name
-    NEW_USER="$root_pass"
-    echo "Please enter New user's password ."
-    read user_pass
-    NEW_USER_PASSWORD="$user_pass"
+read -p "Do you want to create new user for database? (y(Default) / n)" answer
+answer="${answer:-y}"
+if [ "${answer}" == "yes" ] || [ "${answer}" == "y" ]; then
+    read -p "Please enter New user name ." new_user_name
+    read -p "Please enter New user's password ." new_user_pass
 
-sudo mysql -u root -p"$ROOT_PASSWORD" <<EOF
-CREATE USER '$NEW_USER'@'localhost' IDENTIFIED BY '$NEW_USER_PASSWORD';
+sudo mysql -u root -p"${root_pass}" <<EOF
+CREATE USER '${new_user_name}'@'localhost' IDENTIFIED BY '${new_user_pass}';
 FLUSH PRIVILEGES;
-GRANT ALL PRIVILEGES ON *.* TO '$NEW_USER'@'localhost' WITH GRANT OPTION;
-EXIT;
+GRANT ALL PRIVILEGES ON *.* TO '${new_user_name}'@'localhost' WITH GRANT OPTION;
 EOF
 
-elif [[ "$answer" == "no" || "$answer" == "n" ]]; then
+elif [ "${answer}" == "no" ] || [ "${answer}" == "n" ]; then
     echo "New user is not created ."
 
 else
@@ -77,27 +95,26 @@ fi
 
 
 
-if [[ $os_name == "Ubuntu" ]]; then
-
+if [ ${os_name} == "Ubuntu" ]; then
     # DB作成scriptを実行
-    python3 $database_create_py $root_pass $setup_dir/DBsetting
+    python3 ${database_create_py} ${root_pass} ${setup_dir}/DBsetting
 
-elif [[ $os_name == "Raspbian" ]]; then
+elif [[ ${os_name} == "Raspbian" ]]; then
 
     # 仮想環境がなければ作成
     venv_dir=".pidbenv"
-    PY_VENV=$root_dir/$venv_dir
-    if [ ! -d "$PY_VENV" ]; then
+    py_venv=${root_dir}/${venv_dir}
+    if [ ! -d "${py_venv}" ]; then
         echo "Creating virtual environment."
-        python3 -m venv "$PY_VENV"
+        python3 -m venv "${py_venv}"
     fi
 
     # 仮想環境をアクティベート
     echo "Activating virtual environment."
-    source "$PY_VENV/bin/activate"
+    source "${py_venv}/bin/activate"
     
     # DB作成scriptを実行
-    python3 $database_create_py $root_pass $setup_dir/DBsetting
+    python3 ${database_create_py} ${root_pass} ${setup_dir}/DBsetting
 
     # 仮想環境のデアクティベート
     echo "Deactivating virtual environment."
@@ -106,7 +123,7 @@ elif [[ $os_name == "Raspbian" ]]; then
     echo "Done."
 
 else
-    echo "your operation system is $os_name"
+    echo "your operation system is ${os_name}"
     echo "please use Ubuntu or Rasbian-OS"
     echo "bye."
     exit 1
