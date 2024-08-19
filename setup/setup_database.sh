@@ -1,19 +1,29 @@
 #!/bin/bash
 
 echo "welcom to Raspberry Pi Setting!"
+echo "this is setup database script."
 
 set -e
 
 os_name=$(lsb_release -si)
-if [ ${os_name} == "Ubuntu" ] || [ ${os_name} == "Raspbian" ]; then
+if [ ${os_name} == "Ubuntu" ]; then
+    echo
     echo "your operation system is ${os_name}"
 
 else
-    echo "your operation system is ${os_name}"
-    echo "please use Ubuntu or Rasbian-OS"
-    echo "bye."
-    exit 1
-
+    echo
+    read -p "your operation system is Raspbian-OS? (y(Default) / n) : " answer
+    answer="${answer:-y}"
+    if [ "${answer}" == "yes" ] || [ "${answer}" == "y" ]; then
+    	echo
+    	os_name="Raspbian"
+    	echo "your operation system is set to ${os_name}"
+    	echo "please use Ubuntu or Rasbian-OS"
+    if [ "${answer}" == "no" ] || [ "${answer}" == "n" ]; then
+        echo
+    	echo "please use Ubuntu or Rasbian-OS"
+    	echo "bye."
+    	exit 1
 fi
 
 
@@ -52,10 +62,10 @@ else
 fi
 
 # 新しいrootパスワードとユーザー情報を設定
-read -p "Do you want to set root password? (y(Default) / n)" answer
+read -p "Do you want to set root password? (y(Default) / n) : " answer
 answer="${answer:-y}"
 if [ "${answer}" == "yes" ] || [ "${answer}" == "y" ]; then
-    read -p "Please enter New root password for database ." root_pass
+    read -p "Please enter New root password for database -> " root_pass
     echo
 
     # rootユーザーのパスワードを設定
@@ -65,7 +75,7 @@ FLUSH PRIVILEGES;
 EOF
 
 elif [ "${answer}" == "no" ] || [ "${answer}" == "n" ]; then
-    read -p "Please enter current root password for database ." root_pass
+    read -p "Please enter current root password for database -> " root_pass
 
 else
     echo "Invalid input. Please enter 'y(yes)' or 'n(no)'."
@@ -73,11 +83,11 @@ else
 fi
 
 # 新しいユーザーを作成し、パスワードを設定して権限を付与
-read -p "Do you want to create new user for database? (y(Default) / n)" answer
+read -p "Do you want to create new user for database? (y(Default) / n) : " answer
 answer="${answer:-y}"
 if [ "${answer}" == "yes" ] || [ "${answer}" == "y" ]; then
-    read -p "Please enter New user name ." new_user_name
-    read -p "Please enter New user's password ." new_user_pass
+    read -p "Please enter New user name  -> " new_user_name
+    read -p "Please enter New user's password -> " new_user_pass
 
 sudo mysql -u root -p"${root_pass}" <<EOF
 CREATE USER '${new_user_name}'@'localhost' IDENTIFIED BY '${new_user_pass}';
@@ -99,7 +109,7 @@ if [ ${os_name} == "Ubuntu" ]; then
     # DB作成scriptを実行
     python3 ${database_create_py} ${root_pass} ${setup_dir}/DBsetting
 
-elif [[ ${os_name} == "Raspbian" ]]; then
+elif [ ${os_name} == "Raspbian" ]; then
 
     # 仮想環境がなければ作成
     venv_dir=".pidbenv"

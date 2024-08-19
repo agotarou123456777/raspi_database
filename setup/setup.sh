@@ -1,19 +1,28 @@
 #!/bin/bash
 
 echo "welcom to Raspberry Pi Setting!"
-
+echo "this is basic package setup script."
 set -e
 
 os_name=$(lsb_release -si)
-if [ ${os_name} == "Ubuntu" ] || [ ${os_name} == "Raspbian" ]; then
+if [ ${os_name} == "Ubuntu" ]; then
+    echo
     echo "your operation system is ${os_name}"
 
 else
-    echo "your operation system is ${os_name}"
-    echo "please use Ubuntu or Rasbian-OS"
-    echo "bye."
-    exit 1
-
+    echo
+    read -p "your operation system is Raspbian-OS? (y(Default) / n) : " answer
+    answer="${answer:-y}"
+    if [ "${answer}" == "yes" ] || [ "${answer}" == "y" ]; then
+    	echo
+    	os_name="Raspbian"
+    	echo "your operation system is set to ${os_name}"
+    	echo "please use Ubuntu or Rasbian-OS"
+    if [ "${answer}" == "no" ] || [ "${answer}" == "n" ]; then
+        echo
+    	echo "please use Ubuntu or Rasbian-OS"
+    	echo "bye."
+    	exit 1
 fi
 
 
@@ -50,15 +59,21 @@ else
     exit 1
 fi
 
-read -p "Do you want to set proxy to .bashrc? (y(Default) / n)" answer
+read -p "Do you want to set proxy to .bashrc? (y / n) : " answer
 if [ ${answer} == "yes" ] || [ ${answer} == "y" ]; then
+    echo
     echo "This is setting proxy server."
     read -p "Please enter proxy ID (example : 220800022) -> " proxy_id
-
+    
+    echo
     read -p "Please enter proxy PASSWORD -> " proxy_pass 
 
+    echo
     echo "Please enter proxy address and port" 
     read -p "expample : 192.168.0.0:8080 -> " proxy_address
+    
+    echo
+    echo
     echo "Hello, ${proxy_id}!"
     echo "Proxy server is set to ${proxy_address}"
 
@@ -79,9 +94,8 @@ if [ ${answer} == "yes" ] || [ ${answer} == "y" ]; then
     echo "/etc/apt/apt.conf is set ... Done !"
     cat /etc/apt/apt.conf
 
-    source ~/.bashrc
-
 elif [ ${answer} == "no" ] || [ ${answer} == "n" ]; then
+    echo
     echo "Proxy setting is not used."
 
 else
@@ -100,9 +114,13 @@ sudo apt install -y ssh chrony
 sudo apt install -y vim-gtk3 gedit
 sudo apt install -y python3-pip git curl wget
 sudo apt install -y ibus-mozc mozc-utils-gui
-sudo apt install -y mosquitto mosquitto-clients
 sudo apt install -y gedit
 echo "Done !"
+
+# mqttセッティング
+sudo apt install -y mosquitto mosquitto-clients
+echo echo "allow_anonymous true" | sudo tee -a /etc/mosquitto/mosquitto.conf > /dev/null
+echo echo "listener 1883" | sudo tee -a /etc/mosquitto/mosquitto.conf > /dev/null
 
 
 # ftpセッティング
@@ -134,19 +152,19 @@ elif [ ${os_name} == "Raspbian" ]; then
 
     # 仮想環境を作成
     venv_dir=".pidbenv"
-    PY_VENV=$root_dir/$venv_dir
-    if [ ! -d "$PY_VENV" ]; then
+    py_env=${root_dir}/${venv_dir}
+    if [ ! -d "${py_env}" ]; then
         echo "Creating virtual environment."
-        python3 -m venv "$PY_VENV"
+        python3 -m venv "${py_env}"
     fi
 
     # 仮想環境をアクティベート
     echo "Activating virtual environment."
-    source "$PY_VENV/bin/activate"
+    source "${py_env}/bin/activate"
 
     # パッケージをインストール
-    echo "Installing packages from $requirement_txt_path ."
-    pip install -r $requirement_txt_path
+    echo "Installing packages from ${setup_dir}/requirement.txt ."
+    pip install -r ${setup_dir}/requirement.txt
 
     # 仮想環境のデアクティベート
     echo "Deactivating virtual environment."
