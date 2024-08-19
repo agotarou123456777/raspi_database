@@ -3,7 +3,7 @@
 echo "welcom to Raspberry Pi Setting!"
 echo "this is basic package setup script."
 set -e
-
+    
 os_name=$(lsb_release -si)
 if [ ${os_name} == "Ubuntu" ]; then
     echo
